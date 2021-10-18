@@ -1,5 +1,6 @@
 <head></head><style>html,body{margin:0;overflow:hidden}</style>
 <canvas id=a></canvas>
+<canvas id=b></canvas>
 <script>
 //global
 x = a.getContext('2d');
@@ -12,7 +13,8 @@ zoom = 1;
 //game paramters
 PLAYERS = 16;
 COLUMNS = 18;
-COL_START = 200;
+X_START = 200;
+Y_START = 200;
 PLAT_GAP = 10;
 PLAT_W = 40;
 PLAT_H = 30;
@@ -47,11 +49,11 @@ startGame = () => {
 
 render = () => {
   //draw bars holding glass
-  let yPos = COL_START - (PLAT_H / 2);
+  let yPos = Y_START - (PLAT_H / 2);
   for (let i = 0; i < 4; i++) {
     drawLine(
-      {x: COL_START - ((PLAT_W / 2) + PLAT_GAP), y: yPos},
-      {x: COL_START + (COLUMNS * 50) - (PLAT_W / 2), y: yPos},
+      {x: X_START - ((PLAT_W / 2) + PLAT_GAP), y: yPos},
+      {x: X_START + (COLUMNS * 50) - (PLAT_W / 2), y: yPos},
       "gray",
       2
     );
@@ -59,7 +61,7 @@ render = () => {
   }
   platforms.map(p => {
     //draw platforms
-    const xPos = COL_START + ((p.i - 1) * (PLAT_W + PLAT_GAP));
+    const xPos = X_START + ((p.i - 1) * (PLAT_W + PLAT_GAP));
     for (let i = 0; i < 2; i++) {
       if (p.condition === 1
         || (i === 0 && p.isRight === 0)
@@ -67,29 +69,37 @@ render = () => {
       ) {
         draw({
           x: xPos,
-          y: COL_START + (i * (PLAT_H + 10)),
+          y: Y_START + (i * (PLAT_H + 10)),
           w: PLAT_W, h: PLAT_H,
           opacity: .7,
           color: 'blue',
         });
       }
+      else {
+        // draw dead player
+        drawCircle({
+          x: xPos,
+          y: Y_START + (p.isRight * (PLAT_H + 10)) + 200,
+          w: PLAT_W / 2, h: PLAT_H / 2,
+          opacity: .7,
+          color: 'red',
+        })
+        draw({
+          text: "🏃‍♂️", centered: true, fontSize: 30, horiz: true,
+          x: xPos,
+          y: Y_START + (p.isRight * (PLAT_H + 10)) + 200,
+        });
+      }
     }
-
     //draw players
     if (p.i <= progress && p.i > progress - playersLeft) {
       draw({
-        text: "🏃‍♂️", centered: true, fontSize: 30,
+        text: "🏃‍♂️", centered: true, fontSize: 30, horiz: true,
         x: xPos,
-        y: COL_START + (p.isRight * (PLAT_H + 10)),
+        y: Y_START + (p.isRight * (PLAT_H + 10)),
         w: PLAT_W, h: PLAT_H,
       });
     }
-    //draw platform numbers
-    // draw({
-    //   text: p.i, centered: true, fontSize: 20,
-    //   x: xPos,
-    //   y: COL_START + 80,
-    // });
   });
 
   //draw progress
@@ -97,19 +107,33 @@ render = () => {
     text: "⬆",
     centered: 1,
     fontSize: 30,
-    x: COL_START + (progress * (PLAT_W + PLAT_GAP)),
-    y: COL_START + 120,
+    x: X_START + (progress * (PLAT_W + PLAT_GAP)),
+    y: Y_START + 120,
   });
 
   //draw start/end platforms
-  const startX = COL_START - ((BASE_PLATFORM.w / 2) + (PLAT_W / 2) + PLAT_GAP) ;
-  const endX = COL_START + (COLUMNS * 50) - (PLAT_W / 2) + (BASE_PLATFORM.w / 2);
+  const startX = X_START - ((BASE_PLATFORM.w / 2) + (PLAT_W / 2) + PLAT_GAP) ;
+  const endX = X_START + (COLUMNS * (PLAT_W + PLAT_GAP)) - (PLAT_W / 2) + (BASE_PLATFORM.w / 2);
+  const basePlatformY = Y_START + ((PLAT_H + PLAT_GAP) / 2);
   for (let i = 0; i < 2; i++) {
     draw(Object.assign({
       x: i ? startX : endX,
-      y: COL_START + ((PLAT_H + PLAT_GAP) / 2),
+      y: basePlatformY,
       color: "purple"
     }, BASE_PLATFORM));
+  }
+
+  //draw players on start platform
+  const playersOnStart = playersLeft - progress;
+  if (playersOnStart > 0) {
+    for (let i = 0; i < playersOnStart; i++) {
+      draw({
+        text: "🏃‍♂️",
+        centered: true, fontSize: 30,
+        x: startX + randRangeSeed(-30, 50, i),
+        y: basePlatformY + randRangeSeed(-30, 50, i + 1)
+      });
+    }
   }
 };
 
@@ -120,7 +144,7 @@ calc = () => {
       text: `🏃‍♂️ ${playersLeft} players survived!`,
       centered: true, fontSize: 30,
       x: innerWidth / 2,
-      y: COL_START / 2,
+      y: Y_START / 2,
     });
   }
   else if (playersLeft <= 0) {
@@ -129,10 +153,16 @@ calc = () => {
   }
   else {
     draw({
+      text: "🦑🎮 lvl 5",
+      centered: true, fontSize: 30,
+      x: innerWidth / 2,
+      y: Y_START / 4,
+    });
+    draw({
       text: `🏃‍♂️ ${playersLeft} players alive`,
       centered: true, fontSize: 30,
       x: innerWidth / 2,
-      y: COL_START / 2,
+      y: Y_START / 2,
     });
   }
 
@@ -159,7 +189,8 @@ init = () => {
 // Loop
 //---------------------
 window.onload = () => {
-  document.addEventListener("resize", resize);
+  // document.addEventListener("resize", resize);
+  window.onresize = () => resize();
   document.addEventListener("click", () => startGame());
   window.addEventListener("wheel", event => {
     const delta = Math.sign(event.deltaY);
@@ -177,7 +208,11 @@ window.onload = () => {
 //---------------------
 // Utility Methods 
 //---------------------
-resize = () => {a.width = innerWidth; a.height = innerHeight;};
+resize = () => {
+  a.width = innerWidth; a.height = innerHeight;
+  X_START = (a.width / 2) - (((COLUMNS * (PLAT_W + PLAT_GAP)) - (PLAT_W / 2) - (BASE_PLATFORM.w / 2)) / 2);
+  console.log(X_START);
+};
 repeat = (n, f) => {
   for (let i = 0; i < n; i++) f(i);
 };
@@ -210,9 +245,8 @@ drawCircle = o => {
 write = o => {
   x.font = ((o.fontSize || 12) * scale) + 'px serif';
   x.fillStyle = o.color || 'black';
-  if (o.centered) {
-    o.x -= ((x.measureText(o.text).width / 2));
-  }
+  if (o.centered) o.x -= ((x.measureText(o.text).width / 2));
+  //if (o.horiz) x.scale(-1, 1);
   x.fillText(o.text, o.x * scale, o.y * scale);
 };
 drawRect = o => {
@@ -231,4 +265,7 @@ drawLine = (p1, p2, color, width) => {
 };
 rand = Math.random;
 rand0or1 = () => rand() < .5 ? 0 : 1;
+//@KilledByAPixel https://twitter.com/KilledByAPixel/status/1414276611051032577?s=20
+randSeed = (max, seed) => Math.sin(seed)**2 * 1e9 % max
+randRangeSeed = (min, max, seed) => randSeed(max, seed) + min;
 </script>

@@ -1,5 +1,5 @@
-# beat-em-up-min
-Minimal Beat em up game.
+# squid-game-lvl5
+A JavaScript canvas simulation of Squid Game level 5 using emojis.
 
 ## 👤 Author: Lewis Nakao
 I am a software engineer in Hawaii. Find more stuff I made [here](https://lewdev.github.io).
